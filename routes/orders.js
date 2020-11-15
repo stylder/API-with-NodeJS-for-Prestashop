@@ -53,6 +53,13 @@ module.exports = function(app) {
         });
     });
 
+    /* Get all orders */
+    app.get('/orders/products', function(req, res){
+        Order.getProducts(function(error, data) {
+            res.json(200,data);
+        });
+    });
+
     /* Get an especific order */
     app.get('/orders/:id', function(req, res){
         var id = req.params.id;
