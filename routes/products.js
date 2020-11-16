@@ -1,5 +1,5 @@
-var Product = require('../models/products');
-var dateFormat = require('dateformat');
+let Product = require('../models/products');
+let dateFormat = require('dateformat');
 
 
 
@@ -7,7 +7,7 @@ var dateFormat = require('dateformat');
 /* Product routes */
 module.exports = function(app) {
 
-    var today = dateFormat("yyyy-mm-dd h:MM:ss");
+    let today = dateFormat("yyyy-mm-dd h:MM:ss");
 
     /* Insert a new product */
     app.get('/products/post', function(req, res){
@@ -51,18 +51,29 @@ module.exports = function(app) {
 
     /* Get an especific product */
     app.get('/products/:id', function(req, res){
-        var id = req.params.id;
+        let id = req.params.id;
         Product.getProduct(id,function(error, data){
             res.json(200, data);
         });
     });
 
+    app.get('/order/products/:id', function(req, res){
+        let id  = req.params.id;
+
+        Product.getProductsOrder(id, function(error, data){
+            res.status(200).json(data);
+        })
+
+    })
+
+    
+
     /* Insert a product from /products/post form (POST) */
     app.post('/products/insert', function(req, res){
 
-        var insertedProductId = 0;
+        let insertedProductId = 0;
         /* data for ps_product table */
-        var productData = {
+        let productData = {
             id_product : null,
             id_supplier : 1,
             id_manufacturer : 1,
@@ -121,7 +132,7 @@ module.exports = function(app) {
                 console.log(req.body.name);
                 insertedProductId = data.insertId;
                 /* data for ps_product_lang table */
-                var productLangData = {
+                let productLangData = {
                     id_product : insertedProductId,
                     id_shop : 1,
                     id_lang : 1,
@@ -141,7 +152,7 @@ module.exports = function(app) {
                     if(data && data.insertId) {
 
                         /* data for ps_product_lang table */
-                        var productShopData = {
+                        let productShopData = {
                             id_product : insertedProductId,
                             id_shop : 1,
                             id_category_default : 1,
@@ -199,7 +210,7 @@ module.exports = function(app) {
     /* Update a product from /products/put form (PUT) */
     app.post("/products/update", function(req, res) {
         /* Store form data in an object */
-        var productData = {
+        let productData = {
             id_product: req.param('id_product'),
             price: req.param('price'),
             reference: req.param('reference')
@@ -223,7 +234,7 @@ module.exports = function(app) {
     /* Delete a product from /products/delete form (DELETE) */
     app.post("/products/del", function(req, res) {
         /* ID from product to delete */
-        var id = req.param('id_product');
+        let id = req.param('id_product');
         Product.deleteProduct(id, function(error, data) {
             if(data && data.msg === "Producto eliminado") {
                 res.redirect("/products/");

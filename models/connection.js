@@ -9,8 +9,8 @@ const connection = mysql.createConnection({
 });
 
 /* Check database variables */
-if ((typeof connection.host === 'undefined') || (typeof connection.user === 'undefined') || (typeof connection.password === 'undefined') || (typeof connection.database === 'undefined')) {
-    console.log("WARNING: Some database connection variables are not defined. File: models/connection.js.");
+if (!connection.config.host || !connection.config.user || !connection.config.password  || !connection.config.database) {
+    console.error("WARNING: Some database connection variables are not defined. File: models/connection.js.");
 }
 
 module.exports = connection;

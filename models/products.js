@@ -32,15 +32,15 @@ Product.getProduct = function(id, callback) {
     }
 }
 
-Product.getProductsOrder = async function(id, callback){
+Product.getProductsOrder =  function(id, callback){
     console.log('ID', id)
     if(connection){
         const sql = `SELECT  * FROM pr_order_detail WHERE id_order = ${id}`;
-        connection.query(sql, async (error, rows) => {
+        connection.query(sql,  (error, rows) => {
             if (error) {
                 throw error;
             } else {
-               await callback(null, rows);
+                callback(null, rows);
             }
         });
     }

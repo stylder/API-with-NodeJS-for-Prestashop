@@ -19,10 +19,10 @@ Order.getOrders = function(callback) {
     }
 }
 
-Order.getProducts = async function(callback){
+Order.getProducts =  function(callback){
     if (connection) {
     
-        connection.query(`
+        const sql = `
         
         SELECT SQL_CALC_FOUND_ROWS a.id_order, reference, total_paid_tax_incl, payment, a.date_add AS date_add
 , 
@@ -48,29 +48,14 @@ FROM pr_orders a
 
  ORDER BY a.id_order DESC
 
-        `, async function(error, rows) {
+        `
+        console.log(':::', sql)
+        connection.query(sql, function(error, rows) {
             if(error) {
                 throw error;
             }
             else {
-
-                let orders = []
-
-                await Promise.all(rows.map(async (order) => {
-                    const {id_order} = order
-                    
-                    await Products.getProductsOrder(id_order, (error, products) => {
-                        console.log('>>>', products)
-                        orders.push({order, products})
-                    });
-                    
-
-                    
-                  })).finally(()=>{
-                    callback(null, orders);
-                  });
-
-                
+                callback(null, rows);
             }
         });
     }
