@@ -54,10 +54,16 @@ module.exports = function(app) {
     });
 
     /* Get all orders */
-    app.get('/orders/products', function(req, res){
-        Order.getProducts(function(error, data) {
-            res.json(200,data);
-        });
+    app.get('/orders/products', async (req, res) => {
+
+        try {
+            const data = await Order.getProducts();
+            res.status(200).json(data)
+          } catch (e) {
+            //this will eventually be handled by your error handling middleware
+            res.status(501).json(e)
+          }
+        
     });
 
     /* Get an especific order */

@@ -6,7 +6,7 @@ var Product = {};
 /* Get all products */
 Product.getProducts = function(callback) {
     if (connection) {
-        connection.query('SELECT * FROM pr_product_lang ORDER BY id_product', function(error, rows) {
+        connection.query('SELECT * FROM pr_product', function(error, rows) {
             if(error) {
                 throw error;
             }

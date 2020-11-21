@@ -45,7 +45,7 @@ module.exports = function(app) {
     /* Get all products */
     app.get('/products', function(req, res){
         Product.getProducts(function(error, data) {
-            res.json(200,data);
+            res.status(200).json(data)
         });
     });
 

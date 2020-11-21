@@ -1,7 +1,7 @@
 {
   "name": "api-prestashop",
   "version": "1.0.0",
-  "description": "API with NodeJS for Prestashop",
+  "description": "API con NodeJS para Prestashop",
   "main": "index.js",
   "dependencies": {
     "dateformat": "^3.0.3",
@@ -11,9 +11,13 @@
     "fs": "^0.0.1-security",
     "http": "^0.0.0",
     "jade": "^1.11.0",
+    "log4js": "^6.3.0",
     "md5": "^2.3.0",
+    "moment": "^2.29.1",
     "mssql": "^6.2.3",
     "mysql": "^2.18.1",
+    "mysql2": "^2.2.5",
+    "node-async-loop": "^1.2.2",
     "rand": "0.0.4",
     "randomstring": "^1.1.5",
     "split": "^1.0.1",
@@ -21,8 +25,9 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./app.js"
+    "test": "echo \"Error: no se tienen pruebas\" && exit 1",
+    "start": "node ./app.js",
+    "sync": "node ./compaq/sync-prestashop-compaq.js"
   },
   "author": "Santiago García Cabral"
 }

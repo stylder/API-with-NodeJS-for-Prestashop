@@ -30,3 +30,6 @@ yarn-error.log*
 /.idea/
 /documentos/*
 
+
+# Logs 
+/logs/*
