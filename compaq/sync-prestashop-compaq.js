@@ -22,13 +22,12 @@ const actualizarInventario = async () => {
   const { recordset } = await obtenerProductosCompaq();
 
   for (const producto of recordset) {
-    const { CNOMBREPRODUCTO, CCODALTERN } = producto;
+    const { CCODALTERN } = producto;
 
     const id = await obtenerIDProductoPrestashop(CCODALTERN);
 
     if (id) {
       await actualizarProductoPrestashop(id, producto);
-      console.log('Actualizando :::', CNOMBREPRODUCTO, '(', producto.CANTIDAD, ')')
     } else {
       //const nuevoProducto = await agregarProductoPrestashop(id,producto);
       //console.log(nuevoProducto);
@@ -148,37 +147,27 @@ const obtenerIDProductoPrestashop = async (ean13) => {
 };
 
 const agregarProductoPrestashop = async () => {
-  const insertarProducto = `INSERT INTO pr_product SET ?`;
-  const insertarTraduccion = `INSERT INTO pr_product_lang SET ?`;
-  const insertarTienda = `INSERT INTO pr_product_shop SET ?`;
-
-  /* try {
-    const [rows] = await conn.execute(insertarProducto, insertarProducto);
-    if (rows.length) {
-      const { exist } = rows[0];
-      return exist === ean13;
-    } else {
-      return false;
-    }
-  } catch (error) {
-    return error;
-  } */
+  // const insertarProducto = `INSERT INTO pr_product SET ?`;
+  // const insertarTraduccion = `INSERT INTO pr_product_lang SET ?`;
+  // const insertarTienda = `INSERT INTO pr_product_shop SET ?`;
 };
 
 const actualizarProductoPrestashop = async (id, producto) => {
   let quantity = producto.CANTIDAD > 0 ? producto.CANTIDAD : 0;
 
-  let nombre = producto.CNOMBREPRODUCTO || '';
+  let nombre = producto.CNOMBREPRODUCTO.replace(/"/g, '\\"')|| "";
 
-  let decripcion = producto.CDESCRIPCIONPRODUCTO || ''
+  let descripcion = producto.CDESCRIPCIONPRODUCTO.replace(/"/g, '\\"')|| "";
 
-  const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = ${quantity} WHERE id_product = ${id};`;
+  console.log('IDDD',id ,quantity)
 
-  const sentenciaNombreDescripcion = `UPDATE pr_product_lang SET name = ${nombre}, description = ${decripcion}  WHERE id_product = ${id};`;
+  const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
+
+  const sentenciaNombreDescripcion = `UPDATE pr_product_lang SET name = "${nombre}", description = "${descripcion}" WHERE id_product = ${id};`;
 
   try {
-    await conn.execute(sentenciaCantidad);
     await conn.execute(sentenciaNombreDescripcion);
+    await conn.execute(sentenciaCantidad);
   } catch (error) {
     return error;
   }
