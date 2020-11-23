@@ -20,24 +20,35 @@ dotenv.config();
 let conn = {};
 
 const actualizarInventario = async () => {
+  let productosActualizados = 0;
+  let productosAgregados = 0;
   const { recordset } = await obtenerProductosCompaq();
 
   for (const producto of recordset) {
     const { CCODALTERN } = producto;
 
     const id = await obtenerIDProductoPrestashop(CCODALTERN);
+    
 
     if (id) {
       await actualizarProductoPrestashop(id, producto);
+      productosActualizados++;
+      console.log('Actualizando :: ', producto.CNOMBREPRODUCTO);
     } else {
-      console.log('Agregando producto', producto.CNOMBREPRODUCTO);
+      console.log('Agregando :: ', producto.CNOMBREPRODUCTO);
       const product_id = await agregarDatosProductoPrestashop(producto);
       await agregarLangProductoPrestashop(product_id ,producto);
       await agregarTiendaProductoPrestashop(product_id ,producto);
       await actualizarCantidadProductoPrestashop(product_id ,producto);
+      await actualizarCategoriaProductoPrestashop(product_id);
+      productosAgregados++;
     }
   }
-  console.log("Se actualizó el inventario");
+  console.log("_______________");
+  console.log("Productos  | ", productosActualizados);
+  console.log("Agregados  | ", productosAgregados);
+  console.log("_______________");
+
 };
 
 /**
@@ -67,9 +78,13 @@ const obtenerProductosCompaq = async () => {
 
 const crearURLAmigable = (producto) => {
   let url = producto;
-
+  
   // Eliminamos textos diacríticos
   url = url.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // Eliminamos carácteres especiales
+  url = url.replace(/[^a-zA-Z ]/g, "")
+
   // Cambiamos el producto a minusculas;
   url = url.toLowerCase();
 
@@ -79,6 +94,8 @@ const crearURLAmigable = (producto) => {
   url = url.replace(/\s/g, "-");
 
   url = url.replace(/\//g, "-");
+
+  url =  url.replace(/,/g, "");
 
   return url;
 };
@@ -92,7 +109,7 @@ const convertirProductos = ({
     id_product: null,
     id_supplier: 1,
     id_manufacturer: 1,
-    id_category_default: 1,
+    id_category_default: 2,
     id_shop_default: 1,
     id_tax_rules_group: 1,
     on_sale: 0,
@@ -104,7 +121,7 @@ const convertirProductos = ({
     quantity: 0,
     minimal_quantity: 1,
     price: CPRECIO5, /// ⚠️
-    wholesale_price: CPRECIO5, /// ⚠️
+    wholesale_price: 1.0, /// ⚠️
     unity: null,
     unit_price_ratio: 0.0,
     additional_shipping_cost: 0.0,
@@ -123,7 +140,7 @@ const convertirProductos = ({
     redirect_type: "404", // '','404','301-product','302-product','301-category','302-category'
     id_type_redirected: 0,
     available_for_order: 1,
-    available_date: 0000 - 00 - 00,
+    available_date: '0000-00-00',
     show_condition: 1,
     condition: "new", // 'new','used','refurbished'
     show_price: 1,
@@ -132,7 +149,7 @@ const convertirProductos = ({
     cache_is_pack: 0,
     cache_has_attachments: 0,
     is_virtual: 0,
-    cache_default_attribute: 1,
+    cache_default_attribute: 0,
     date_add: hoy,
     date_upd: hoy,
     advanced_stock_management: 0,
@@ -217,14 +234,14 @@ const agregarTiendaProductoPrestashop = async (id_product, producto) => {
   let datos = {
     id_product,
     id_shop: 1,
-    id_category_default: 17,
+    id_category_default: 2,
     id_tax_rules_group: 1,
     on_sale: 0,
     online_only: 0,
     ecotax: 0.0,
     minimal_quantity: 1,
     price: producto.CPRECIO5,
-    wholesale_price:producto.CPRECIO5,
+    wholesale_price:1.0,
     unity: null,
     unit_price_ratio: 0.0,
     additional_shipping_cost: 0.0,
@@ -258,6 +275,23 @@ const agregarTiendaProductoPrestashop = async (id_product, producto) => {
 };
 
 
+const actualizarCategoriaProductoPrestashop = async (id_product) => {
+  const sentenciaSql = `INSERT INTO pr_category_product SET ?`;
+  const datos = {
+    id_product,
+    id_category : 2,
+    position : 1,
+  }
+  try {
+    const [rows] =await conn.query(sentenciaSql, datos);
+    return rows;
+  } catch (error) {
+    console.log('ERROR:::: actualizarCategoriaProductoPrestashop ->', error);
+    return error;
+  }
+}
+
+
 const actualizarCantidadProductoPrestashop = async (id, cantidad) => {
 
   let quantity = cantidad > 0 ? cantidad : 0;
@@ -271,12 +305,15 @@ const actualizarCantidadProductoPrestashop = async (id, cantidad) => {
   }
 }
 
+
+
+
 const actualizarProductoPrestashop = async (id, producto) => {
   let quantity = producto.CANTIDAD > 0 ? producto.CANTIDAD : 0;
 
-  let nombre = producto.CNOMBREPRODUCTO.replace(/"/g, '\\"') || "";
+  let nombre =  producto.CNOMBREPRODUCTO ? producto.CNOMBREPRODUCTO.replace(/"/g, '\\"') : "";
 
-  let descripcion = producto.CDESCRIPCIONPRODUCTO.replace(/"/g, '\\"') || "";
+  let descripcion = producto.CDESCRIPCIONPRODUCTO ? producto.CDESCRIPCIONPRODUCTO.replace(/"/g, '\\"') : "";
 
   // PRECIO SIN IVA
   let precio = producto.CPRECIO5 || 0;
@@ -333,5 +370,5 @@ const crearConexionCompaq = () => {
 crearConexionPrestashop().then(async () => {
   await crearLogger();
   await actualizarInventario();
-  console.log("Terminamos");
+  console.log("Terminamos ...");
 });
