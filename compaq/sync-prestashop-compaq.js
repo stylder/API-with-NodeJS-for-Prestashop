@@ -12,6 +12,7 @@ const moment = require("moment");
 const filename = moment().format("YYYY-MM-DD - HH_mm_ss");
 const sql = require("mssql");
 const mysql = require("mysql2/promise");
+const hoy =  moment().format("YYYY-MM-DD HH:MM:SS")
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -29,8 +30,11 @@ const actualizarInventario = async () => {
     if (id) {
       await actualizarProductoPrestashop(id, producto);
     } else {
-      //const nuevoProducto = await agregarProductoPrestashop(id,producto);
-      //console.log(nuevoProducto);
+      console.log('Agregando producto', producto.CNOMBREPRODUCTO);
+      const product_id = await agregarDatosProductoPrestashop(producto);
+      await agregarLangProductoPrestashop(product_id ,producto);
+      await agregarTiendaProductoPrestashop(product_id ,producto);
+      await actualizarCantidadProductoPrestashop(product_id ,producto);
     }
   }
   console.log("Se actualizó el inventario");
@@ -61,12 +65,29 @@ const obtenerProductosCompaq = async () => {
   });
 };
 
-const crearURLAmigable = async () => {
-  try {
-  } catch (error) {}
+const crearURLAmigable = (producto) => {
+  let url = producto;
+
+  // Eliminamos textos diacríticos
+  url = url.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Cambiamos el producto a minusculas;
+  url = url.toLowerCase();
+
+  // Cambiamos caracteres especiales
+  url = url.replace(/"/g, "");
+
+  url = url.replace(/\s/g, "-");
+
+  url = url.replace(/\//g, "-");
+
+  return url;
 };
 
-const convertirProductos = (producto) => {
+const convertirProductos = ({
+  CNOMBREPRODUCTO,
+  CCODALTERN,
+  CPRECIO5,
+}) => {
   return {
     id_product: null,
     id_supplier: 1,
@@ -76,18 +97,17 @@ const convertirProductos = (producto) => {
     id_tax_rules_group: 1,
     on_sale: 0,
     online_only: 0,
-    ean13: 0,
+    ean13: CCODALTERN,
     isbn: null,
     upc: null,
     ecotax: 0.0,
-    quantity: 500,
+    quantity: 0,
     minimal_quantity: 1,
-    price: producto.precio, /// ⚠️
-    wholesale_price: producto.precio, /// ⚠️
+    price: CPRECIO5, /// ⚠️
+    wholesale_price: CPRECIO5, /// ⚠️
     unity: null,
     unit_price_ratio: 0.0,
     additional_shipping_cost: 0.0,
-    reference: producto.referencia, /// ⚠️
     supplier_reference: null,
     location: null,
     width: 0.0,
@@ -113,8 +133,8 @@ const convertirProductos = (producto) => {
     cache_has_attachments: 0,
     is_virtual: 0,
     cache_default_attribute: 1,
-    date_add: today,
-    date_upd: today,
+    date_add: hoy,
+    date_upd: hoy,
     advanced_stock_management: 0,
     pack_stock_type: 3,
     state: 1,
@@ -146,28 +166,126 @@ const obtenerIDProductoPrestashop = async (ean13) => {
   }
 };
 
-const agregarProductoPrestashop = async () => {
-  // const insertarProducto = `INSERT INTO pr_product SET ?`;
-  // const insertarTraduccion = `INSERT INTO pr_product_lang SET ?`;
-  // const insertarTienda = `INSERT INTO pr_product_shop SET ?`;
+const agregarDatosProductoPrestashop = async (producto) => {
+  const insertarProducto = `INSERT INTO pr_product SET ?`;
+
+  let datos = convertirProductos(producto);
+
+  try {
+    const [rows] = await conn.query(insertarProducto, datos);
+    return rows.insertId;
+  } catch (error) {
+    console.log('ERROR:::: agregarDatosProductoPrestashop ->', error);
+    return error;
+  }
 };
+
+const agregarLangProductoPrestashop = async (id_product, producto) => {
+  const insertarProducto = `INSERT INTO pr_product_lang SET ?`;
+
+  let productoLang = {
+    id_product,
+    id_shop: 1,
+    id_lang: 1,
+    description: producto.CDESCRIPCIONPRODUCTO,
+    description_short: producto.CDESCRIPCIONPRODUCTO,
+    link_rewrite: crearURLAmigable(producto.CNOMBREPRODUCTO),
+    meta_description: null,
+    meta_keywords: null,
+    meta_title: null,
+    name: producto.CNOMBREPRODUCTO,
+    available_now: "En stock",
+    available_later: null,
+  };
+
+  try {
+    await conn.query(insertarProducto, productoLang);
+  
+    productoLang.id_lang = 2;
+
+    await conn.query(insertarProducto, productoLang);
+
+  } catch (error) {
+    console.log('ERROR:::: agregarLangProductoPrestashop ->', error);
+    return error;
+  }
+};
+
+const agregarTiendaProductoPrestashop = async (id_product, producto) => {
+  const sentenciaSql = `INSERT INTO pr_product_shop SET ?`;
+
+  let datos = {
+    id_product,
+    id_shop: 1,
+    id_category_default: 17,
+    id_tax_rules_group: 1,
+    on_sale: 0,
+    online_only: 0,
+    ecotax: 0.0,
+    minimal_quantity: 1,
+    price: producto.CPRECIO5,
+    wholesale_price:producto.CPRECIO5,
+    unity: null,
+    unit_price_ratio: 0.0,
+    additional_shipping_cost: 0.0,
+    customizable: 0,
+    uploadable_files: 0,
+    text_fields: 0,
+    active: 1,
+    redirect_type: "404",
+    id_type_redirected: 0,
+    available_for_order: 1,
+    available_date: hoy,
+    show_condition: 1,
+    condition: "new",
+    show_price: 1,
+    indexed: 1,
+    visibility: "both",
+    cache_default_attribute: 1,
+    advanced_stock_management: 0,
+    date_add: hoy,
+    date_upd: hoy,
+    pack_stock_type: 3,
+  };
+
+  try {
+    const [rows] = await conn.query(sentenciaSql, datos);
+    return rows;
+  } catch (error) {
+    console.log('ERROR:::: agregarTiendaProductoPrestashop ->', error);
+    return error;
+  }
+};
+
+
+const actualizarCantidadProductoPrestashop = async (id, cantidad) => {
+
+  let quantity = cantidad > 0 ? cantidad : 0;
+  const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
+  try {
+    const [rows] =await conn.execute(sentenciaCantidad);
+    return rows;
+  } catch (error) {
+    console.log('ERROR:::: actualizarCantidadProductoPrestashop ->', error);
+    return error;
+  }
+}
 
 const actualizarProductoPrestashop = async (id, producto) => {
   let quantity = producto.CANTIDAD > 0 ? producto.CANTIDAD : 0;
 
-  let nombre = producto.CNOMBREPRODUCTO.replace(/"/g, '\\"')|| "";
+  let nombre = producto.CNOMBREPRODUCTO.replace(/"/g, '\\"') || "";
 
-  let descripcion = producto.CDESCRIPCIONPRODUCTO.replace(/"/g, '\\"')|| "";
+  let descripcion = producto.CDESCRIPCIONPRODUCTO.replace(/"/g, '\\"') || "";
 
-  // PRECIO SIN IVA 
-  let precio =  producto.CPRECIO5 || 0; 
+  // PRECIO SIN IVA
+  let precio = producto.CPRECIO5 || 0;
 
   const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
 
   const sentenciaNombreDescripcion = `UPDATE pr_product_lang SET name = "${nombre}", description = "${descripcion}" WHERE id_product = ${id};`;
 
   const sentenciaPrecio = `UPDATE pr_product_shop SET price = "${precio}" WHERE id_product = ${id};`;
-
 
   try {
     await conn.execute(sentenciaNombreDescripcion);
