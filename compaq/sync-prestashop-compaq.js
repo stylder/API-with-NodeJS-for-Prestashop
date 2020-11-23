@@ -159,15 +159,20 @@ const actualizarProductoPrestashop = async (id, producto) => {
 
   let descripcion = producto.CDESCRIPCIONPRODUCTO.replace(/"/g, '\\"')|| "";
 
-  console.log('IDDD',id ,quantity)
+  // PRECIO SIN IVA 
+  let precio =  producto.CPRECIO5 || 0; 
 
   const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
 
   const sentenciaNombreDescripcion = `UPDATE pr_product_lang SET name = "${nombre}", description = "${descripcion}" WHERE id_product = ${id};`;
 
+  const sentenciaPrecio = `UPDATE pr_product_shop SET price = "${precio}" WHERE id_product = ${id};`;
+
+
   try {
     await conn.execute(sentenciaNombreDescripcion);
     await conn.execute(sentenciaCantidad);
+    await conn.execute(sentenciaPrecio);
   } catch (error) {
     return error;
   }
