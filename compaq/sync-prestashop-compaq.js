@@ -347,8 +347,6 @@ const actualizarProductoPrestashop = async (id, producto) => {
 
   // PRECIO SIN IVA
   let precio = producto.CPRECIO5 || 0;
-
-  console.log(':DD', quantity)
   const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
 
   const sentenciaNombreDescripcion = `UPDATE pr_product_lang SET name = "${nombre}", description = "${descripcion}" WHERE id_product = ${id};`;
