@@ -34,6 +34,7 @@ const actualizarInventario = async () => {
 
     if (!isNaN(CNOMALTERN) && CNOMALTERN) {
       const id = await obtenerIDProductoPrestashop(CNOMALTERN);
+      producto.CPRECIO5 = CPRECIO5 * 1.16;
 
       if (id) {
         await actualizarProductoPrestashop(id, producto);
@@ -47,11 +48,10 @@ const actualizarInventario = async () => {
           CNOMBREPRODUCTO
         );
       } else {
-        producto.CPRECIO5 = CPRECIO5 * 1.16;
         const product_id = await agregarDatosProductoPrestashop(producto);
         await agregarLangProductoPrestashop(product_id, producto);
         await agregarTiendaProductoPrestashop(product_id, producto);
-        await actualizarCantidadProductoPrestashop(product_id, producto);
+        await agregarCantidadProductoPrestashop(product_id, producto);
         await actualizarCategoriaProductoPrestashop(product_id);
         productosAgregados++;
         console.log(
@@ -227,9 +227,9 @@ const agregarLangProductoPrestashop = async (id_product, producto) => {
     id_lang: 1,
     description: producto.CDESCRIPCIONPRODUCTO,
     description_short: producto.CDESCRIPCIONPRODUCTO,
+    meta_keywords: null,
     link_rewrite: crearURLAmigable(producto.CNOMBREPRODUCTO),
     meta_description: null,
-    meta_keywords: null,
     meta_title: null,
     name: producto.CNOMBREPRODUCTO,
     available_now: "En stock",
@@ -310,11 +310,23 @@ const actualizarCategoriaProductoPrestashop = async (id_product) => {
   }
 };
 
-const actualizarCantidadProductoPrestashop = async (id, cantidad) => {
-  let quantity = cantidad > 0 ? cantidad : 0;
-  const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
+const agregarCantidadProductoPrestashop = async (id_product, {CANTIDAD}) => {
+  let quantity = CANTIDAD > 0 ? CANTIDAD : 0;
+  const datos = {
+    id_product,
+    id_product_attribute: 0,
+    id_shop: 1,
+    id_shop_group: 0,
+    quantity,
+    physical_quantity: 0,
+    reserved_quantity: 0,
+    depends_on_stock: 0,
+    out_of_stock: 2,
+    location: 'Zacatecas'
+  };
+  const sentenciaSql = `INSERT INTO pr_stock_available SET ?`;
   try {
-    const [rows] = await conn.execute(sentenciaCantidad);
+    const [rows] = await conn.query(sentenciaSql, datos);
     return rows;
   } catch (error) {
     console.log("ERROR:::: actualizarCantidadProductoPrestashop ->", error);
@@ -336,6 +348,7 @@ const actualizarProductoPrestashop = async (id, producto) => {
   // PRECIO SIN IVA
   let precio = producto.CPRECIO5 || 0;
 
+  console.log(':DD', quantity)
   const sentenciaCantidad = `UPDATE pr_stock_available SET quantity = "${quantity}" WHERE id_product = ${id};`;
 
   const sentenciaNombreDescripcion = `UPDATE pr_product_lang SET name = "${nombre}", description = "${descripcion}" WHERE id_product = ${id};`;
