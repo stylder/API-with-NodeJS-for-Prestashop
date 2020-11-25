@@ -34,7 +34,6 @@ const actualizarInventario = async () => {
 
     if (!isNaN(CNOMALTERN) && CNOMALTERN) {
       const id = await obtenerIDProductoPrestashop(CNOMALTERN);
-      producto.CPRECIO5 = CPRECIO5 * 1.16;
 
       if (id) {
         await actualizarProductoPrestashop(id, producto);
