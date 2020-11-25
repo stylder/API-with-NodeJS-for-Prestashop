@@ -30,37 +30,39 @@ const actualizarInventario = async () => {
   console.log("ESTATUS | CANT. | PRECIO | PRODUCTO ");
 
   for (let producto of recordset) {
-    const { CCODALTERN, CANTIDAD, CPRECIO5, CNOMBREPRODUCTO } = producto;
+    const { CANTIDAD, CPRECIO5, CNOMBREPRODUCTO, CNOMALTERN } = producto;
 
-    const id = await obtenerIDProductoPrestashop(CCODALTERN);
+    if (!isNaN(CNOMALTERN) && CNOMALTERN) {
+      const id = await obtenerIDProductoPrestashop(CNOMALTERN);
 
-    if (id) {
-      await actualizarProductoPrestashop(id, producto);
-      productosActualizados++;
-      console.log(
-        "ACTUALI | ",
-        CANTIDAD,
-        "| ",
-        CPRECIO5,
-        " | ",
-        CNOMBREPRODUCTO
-      );
-    } else {
-      producto.CPRECIO5 = CPRECIO5 * 1.16;
-      const product_id = await agregarDatosProductoPrestashop(producto);
-      await agregarLangProductoPrestashop(product_id, producto);
-      await agregarTiendaProductoPrestashop(product_id, producto);
-      await actualizarCantidadProductoPrestashop(product_id, producto);
-      await actualizarCategoriaProductoPrestashop(product_id);
-      productosAgregados++;
-      console.log(
-        "AGREGAN | ",
-        CANTIDAD,
-        "| ",
-        CPRECIO5,
-        " | ",
-        CNOMBREPRODUCTO
-      );
+      if (id) {
+        await actualizarProductoPrestashop(id, producto);
+        productosActualizados++;
+        console.log(
+          "ACTUALI | ",
+          CANTIDAD,
+          "| ",
+          CPRECIO5,
+          " | ",
+          CNOMBREPRODUCTO
+        );
+      } else {
+        producto.CPRECIO5 = CPRECIO5 * 1.16;
+        const product_id = await agregarDatosProductoPrestashop(producto);
+        await agregarLangProductoPrestashop(product_id, producto);
+        await agregarTiendaProductoPrestashop(product_id, producto);
+        await actualizarCantidadProductoPrestashop(product_id, producto);
+        await actualizarCategoriaProductoPrestashop(product_id);
+        productosAgregados++;
+        console.log(
+          "AGREGAN | ",
+          CANTIDAD,
+          "| ",
+          CPRECIO5,
+          " | ",
+          CNOMBREPRODUCTO
+        );
+      }
     }
   }
   console.log("____________________________________");
@@ -76,7 +78,7 @@ const actualizarInventario = async () => {
  *   CANTIDAD,
  *   CNOMBREPRODUCTO,
  *   CDESCRIPCIONPRODUCTO,
- *   CCODALTERN,
+ *   CNOMALTERN,
  *   CDESCCORTA,
  *   CPRECIO
  */
@@ -123,7 +125,7 @@ const crearURLAmigable = (producto) => {
   return url;
 };
 
-const convertirProductos = ({ CNOMBREPRODUCTO, CCODALTERN, CPRECIO5 }) => {
+const convertirProductos = ({ CNOMBREPRODUCTO, CNOMALTERN, CPRECIO5 }) => {
   return {
     id_product: null,
     id_supplier: 1,
@@ -133,7 +135,7 @@ const convertirProductos = ({ CNOMBREPRODUCTO, CCODALTERN, CPRECIO5 }) => {
     id_tax_rules_group: 1,
     on_sale: 0,
     online_only: 0,
-    ean13: CCODALTERN,
+    ean13: CNOMALTERN,
     isbn: "",
     upc: "",
     ecotax: 0.0,
@@ -375,10 +377,10 @@ const crearConexionCompaq = () => {
     password: process.env.MICROSOFT_SQL_PASSWORD,
     server: process.env.MICROSOFT_SQL_SERVER,
     database: process.env.MICROSOFT_SQL_DATABASE,
-    enableArithAbort: true,
+    port: Number(process.env.MICROSOFT_SQL_PORT || 1433), 
+    enableArithAbort: process.env.MICROSOFT_ARITH_ABORT === 'TRUE',
     options: {
-      encrypt: true,
-      enableArithAbort: true,
+      encrypt:  process.env.MICROSOFT_ENCRYPT === 'TRUE',
     },
   };
 };
