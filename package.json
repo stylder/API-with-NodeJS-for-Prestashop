@@ -4,6 +4,7 @@
   "description": "API con NodeJS para Prestashop",
   "main": "index.js",
   "dependencies": {
+    "axios": "^0.21.0",
     "dateformat": "^3.0.3",
     "dotenv": "^8.2.0",
     "exceljs": "^4.2.0",

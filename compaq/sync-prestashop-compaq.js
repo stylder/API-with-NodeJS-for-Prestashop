@@ -18,6 +18,13 @@ dotenv.config();
 
 let conn = {};
 
+
+// Notificaciones de telgram 
+const axios = require("axios");
+const url = process.env.TELEGRAM_URL;
+const token = process.env.TELEGRAM_TOKEN;
+const chatId = process.env.TELEGRAM_ID_CHAT;
+
 const actualizarInventario = async () => {
   let productosActualizados = 0;
   let productosAgregados = 0;
@@ -64,10 +71,21 @@ const actualizarInventario = async () => {
       }
     }
   }
+
+  const mensaje = `
+
+<b>Saludos 👋 sólo paso a informarte que realicé lo siguiente</b>:
+
+<b>Agregué ${productosAgregados} productos</b>
+
+<b>Actualicé ${productosActualizados} productos</b>
+          
+`;
   console.log("____________________________________");
   console.log("TOTAL ACTUALIZADOS | ", productosActualizados);
   console.log("TOTAL AGREGANGADOS | ", productosAgregados);
   console.log("____________________________________");
+  sentMessage(mensaje);
 };
 
 /**
@@ -372,6 +390,21 @@ const crearLogger = async () => {
   });
 };
 
+
+const sentMessage = (text) => {
+  axios
+    .post(`${url}${token}/sendMessage`, {
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML'
+    })
+    .then((response) => {
+      console.log(response);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+};
 const crearConexionPrestashop = async () => {
   conn = await mysql.createConnection({
     host: process.env.MYSQL_PRESTASHOP_HOST || "",
@@ -398,5 +431,5 @@ const crearConexionCompaq = () => {
 crearConexionPrestashop().then(async () => {
   await crearLogger();
   await actualizarInventario();
-  console.log("Terminamos ...");
 });
+
