@@ -399,10 +399,10 @@ const sentMessage = (text) => {
       parse_mode: 'HTML'
     })
     .then((response) => {
-      console.log(response);
+      // console.log(response);
     })
     .catch((error) => {
-      console.error(error);
+      // console.error(error);
     });
 };
 const crearConexionPrestashop = async () => {
