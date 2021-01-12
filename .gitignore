@@ -33,3 +33,5 @@ yarn-error.log*
 
 # Logs 
 /logs/*
+
+compaq/categories_parse.json
