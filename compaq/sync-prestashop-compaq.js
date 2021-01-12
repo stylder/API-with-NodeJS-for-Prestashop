@@ -37,10 +37,11 @@ const actualizarInventario = async () => {
   console.log("ESTATUS | CANT. | PRECIO | PRODUCTO ");
 
   for (let producto of recordset) {
-    const { CANTIDAD, CPRECIO5, CNOMBREPRODUCTO, CNOMALTERN } = producto;
+    const { CANTIDAD, CPRECIO5, CNOMBREPRODUCTO, CNOMALTERN, CIDVALORCLASIFICACION1 } = producto;
 
     if (!isNaN(CNOMALTERN) && CNOMALTERN) {
       const id = await obtenerIDProductoPrestashop(CNOMALTERN);
+      const id_category =  parseCategory(CIDVALORCLASIFICACION1);
 
       if (id) {
         await actualizarProductoPrestashop(id, producto);
@@ -54,11 +55,14 @@ const actualizarInventario = async () => {
           CNOMBREPRODUCTO
         );
       } else {
+
+        producto.id_category =  id_category;
         const product_id = await agregarDatosProductoPrestashop(producto);
         await agregarLangProductoPrestashop(product_id, producto);
         await agregarTiendaProductoPrestashop(product_id, producto);
         await agregarCantidadProductoPrestashop(product_id, producto);
         await actualizarCategoriaProductoPrestashop(product_id);
+        await agregarCategoria(product_id, id_category);
         productosAgregados++;
         console.log(
           "AGREGAN | ",
@@ -142,12 +146,12 @@ const crearURLAmigable = (producto) => {
   return url;
 };
 
-const convertirProductos = ({ CNOMBREPRODUCTO, CNOMALTERN, CPRECIO5 }) => {
+const convertirProductos = ({ CNOMBREPRODUCTO, CNOMALTERN, CPRECIO5, id_category }) => {
   return {
     id_product: null,
     id_supplier: 1,
     id_manufacturer: 1,
-    id_category_default: 2,
+    id_category_default: id_category,
     id_shop_default: 1,
     id_tax_rules_group: 1,
     on_sale: 0,
@@ -265,13 +269,35 @@ const agregarLangProductoPrestashop = async (id_product, producto) => {
   }
 };
 
+const  listaCategorias = require("./categories_parse.json");
+
+const parseCategory =  (id_category) =>{
+  let newId = 2;
+  listaCategorias.forEach(categoria => {
+    if(categoria.CIDVALORCLASIFICACION === id_category ){
+      newId =  categoria.id_category;
+    }
+  });
+  return newId;
+}
+const agregarCategoria = async (id_product, id_category) => {
+
+  const insertarCategoria = `INSERT INTO pr_category_product VALUES ( ${id_category},${id_product},${1});`;
+  try {
+      await conn.execute(insertarCategoria);
+  } catch (error) {
+    console.log("ERROR:::: agregarCategoryProductoPrestashop ->", error);
+    return error;
+  }
+};
+
 const agregarTiendaProductoPrestashop = async (id_product, producto) => {
   const sentenciaSql = `INSERT INTO pr_product_shop SET ?`;
 
   let datos = {
     id_product,
     id_shop: 1,
-    id_category_default: 2,
+    id_category_default: producto.id_category || 2 ,
     id_tax_rules_group: 1,
     on_sale: 0,
     online_only: 0,
@@ -316,7 +342,7 @@ const actualizarCategoriaProductoPrestashop = async (id_product) => {
   const datos = {
     id_product,
     id_category: 2,
-    position: 1,
+    position: 2,
   };
   try {
     const [rows] = await conn.query(sentenciaSql, datos);
