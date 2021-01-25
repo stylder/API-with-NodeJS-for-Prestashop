@@ -42,9 +42,12 @@ const actualizarInventario = async () => {
     if (!isNaN(CNOMALTERN) && CNOMALTERN) {
       const id = await obtenerIDProductoPrestashop(CNOMALTERN);
       const id_category =  parseCategory(CIDVALORCLASIFICACION1);
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       if (id) {
+        
         await actualizarProductoPrestashop(id, producto);
+
         productosActualizados++;
         console.log(
           "ACTUALI | ",
@@ -121,6 +124,8 @@ const obtenerProductosCompaq = async () => {
     return sql.query(query);
   });
 };
+
+
 
 const crearURLAmigable = (producto) => {
   let url = producto;
